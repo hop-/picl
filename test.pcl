@@ -1,0 +1,9 @@
+PROGRAM test ;
+INT a,c,t
+BEGIN {testing comments
+	dasfqjkwfq fassf 
+	wqrq w das}
+	a := c; (* testing expressions
+		   testing comments*)
+	c := t; 
+END.
