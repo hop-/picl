@@ -1,26 +1,25 @@
 COMPILER picl
 	/*PICL Language description*/
 CHARACTERS
+  	letter = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".
+  	digit = "0123456789".
+	hexDigit = "0123456789ABCDEF".
 	cr = '\r'.
 	lf = '\n'.
 	tab = '\t'.
 
+TOKENS
+	Identificator = letter {letter | digit}.
+	Integer = digit {digit}.
+	Set = "$" hexDigit hexDigit.
+
 COMMENTS FROM "{" TO "}" NESTED
 COMMENTS FROM "(*" TO "*)" NESTED
-COMMENTS FROM "//" TO cr lf
 
 IGNORE cr + lf + tab
 
 PRODUCTIONS
 
-	letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z".
-	digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9".
-	hexDigit = digit | "A" | "B" | "C" | "D" | "E" | "F".
-
-	Identificator = letter {letter | digit}.
-
-	Integer = digit {digit}.
-	Set = "$" hexDigit hexDigit.
 	Constant = Integer | Set.
 
 	Type = "INT" | "SET" | "BOOL".
@@ -29,7 +28,7 @@ PRODUCTIONS
 
 	Operator = "+" | "-" | "*".
 
-	Expression = (Identificator | Constant) [Operator | (Identificator | Constant)] | Identificator "(" [Expression] ")".
+	Expression = (Identificator | Constant) [Operator (Identificator | Constant)] | Call.
 
 	Relation = "=" | "#" | "<" | ">" | "<=" | "=>".
 	Index = Integer.
@@ -41,7 +40,7 @@ PRODUCTIONS
 	Condition = Conjunction | Disjunction | "*".
 
 	Assignment = Identificator ":=" Expression.
-	Call = Identificator ["(" Expression ")"].
+	Call = Identificator "(" [Expression] ")".
 	Command = "!" ["~"] Identificator ["." Index] | ("INC" | "DEC" | "ROL" | "ROR") Identificator.
 	Query = "?" ["~"] Identificator ["." Index].
 
@@ -65,5 +64,5 @@ PRODUCTIONS
 
 	MainBody = "BEGIN" StatSeq "END.".
 
-	picl = "PROGRAM" Identificator ";" {Module} {ProcedureDeclaration} {VariableDeclaration} MainBody.
+	picl = "PROGRAM" Identificator ";" {Module} {ProcedureDeclaration} {VariableDeclaration} MainBody | StatSeq.
 END picl.
