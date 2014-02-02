@@ -6,4 +6,17 @@ BEGIN {testing comments
 	a := c; (* testing expressions
 		   testing comments*)
 	c := t; 
+	IF c < d THEN
+		ca();
+	ELSE
+		ss(da());
+	END;
+	WHILE sas >= sd DO
+		sada(2 + ds);
+	ELSIF as = sda DO
+		sad := sad+1;
+	END;
+	REPEAT
+		ddd := ddd - 1;
+	UNTIL ddd > 4
 END.

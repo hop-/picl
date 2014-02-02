@@ -28,9 +28,10 @@ PRODUCTIONS
 
 	Operator = "+" | "-" | "*".
 
-	Expression = (Identificator | Constant) [Operator (Identificator | Constant)] | Call.
+	Expression1Const = (Constant) [Operator (Identificator | Constant)].
+	Expression = Expression1Const | Identificator ([Operator (Identificator | Constant)] | Call).
 
-	Relation = "=" | "#" | "<" | ">" | "<=" | "=>".
+	Relation = "=" | "#" | "<" | ">" | "<=" | ">=".
 	Index = Integer.
 	Term = Identificator Relation (Identificator | Constant) | ["~"] Identificator ["." Index].
 
@@ -39,8 +40,8 @@ PRODUCTIONS
 	
 	Condition = Conjunction | Disjunction | "*".
 
-	Assignment = Identificator ":=" Expression.
-	Call = Identificator "(" [Expression] ")".
+	Assignment =  ":=" Expression.
+	Call = "(" [Expression] ")".
 	Command = "!" ["~"] Identificator ["." Index] | ("INC" | "DEC" | "ROL" | "ROR") Identificator.
 	Query = "?" ["~"] Identificator ["." Index].
 
@@ -50,7 +51,7 @@ PRODUCTIONS
 
 	RepeatStat = "REPEAT" StatSeq ("UNTIL" Condition | "END").
 
-	Statement = [Assignment | Call | Command | Query | IfStat | WhileStat | RepeatStat].
+	Statement = [Identificator (Assignment | Call) | Command | Query | IfStat | WhileStat | RepeatStat].
 	StatSeq = Statement {";" Statement}.
 
 
