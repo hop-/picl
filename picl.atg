@@ -9,9 +9,9 @@ CHARACTERS
 	tab = '\t'.
 
 TOKENS
-	Identificator = letter {letter | digit}.
-	Integer = digit {digit}.
-	Set = "$" hexDigit hexDigit.
+	ident = letter {letter | digit}.
+	int = digit {digit}.
+	set = "$" hexDigit hexDigit.
 
 COMMENTS FROM "{" TO "}" NESTED
 COMMENTS FROM "(*" TO "*)" NESTED
@@ -19,6 +19,10 @@ COMMENTS FROM "(*" TO "*)" NESTED
 IGNORE cr + lf + tab
 
 PRODUCTIONS
+	
+	Identificator = ident.
+	Integer = int.
+	Set = set.
 
 	Constant = Integer | Set.
 
@@ -40,7 +44,7 @@ PRODUCTIONS
 	
 	Condition = Conjunction | Disjunction | "*".
 
-	Assignment =  ":=" Expression.
+	Assignment = ":=" Expression.
 	Call = "(" [Expression] ")".
 	Command = "!" ["~"] Identificator ["." Index] | ("INC" | "DEC" | "ROL" | "ROR") Identificator.
 	Query = "?" ["~"] Identificator ["." Index].
