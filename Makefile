@@ -1,6 +1,6 @@
 
 
-default: coco pll
+default: clean coco pll 
 
 coco:	
 	mkdir -p output

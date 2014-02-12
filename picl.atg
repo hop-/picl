@@ -1,17 +1,59 @@
 COMPILER picl
-	/*PICL Language description*/
+	/*PICL Language Compiler*/
+
+	int // operators
+		oPlus, oMinus, oMul;
+	
+	int // types
+		tInt, tSet, tBool;
+	
+	int // object kinds
+		var, proc;
+
 CHARACTERS
-  	letter = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".
-  	digit = "0123456789".
+  	letter 	 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".
+  	digit 	 = "0123456789".
 	hexDigit = "0123456789ABCDEF".
-	cr = '\r'.
-	lf = '\n'.
-	tab = '\t'.
+	cr	 = '\r'.
+	lf	 = '\n'.
+	tab	 = '\t'.
 
 TOKENS
-	ident = letter {letter | digit}.
-	int = digit {digit}.
-	set = "$" hexDigit hexDigit.
+	ident	 = letter {letter | digit}.
+	int	 = digit {digit}.
+	set	 = "$" hexDigit hexDigit.
+	Tint	 = "INT".
+	Tset	 = "SET".
+	Tbool	 = "BOOL".
+	inc	 = "INC".
+	dec	 = "DEC".
+	rol	 = "ROL".
+	ror	 = "ROR".
+	if	 = "IF".
+	then	 = "THEN".
+	end	 = "END".
+	elsif	 = "ELSIF".
+	else	 = "ELSE".
+	while	 = "WHILE".
+	do	 = "DO".
+	repeat	 = "REPEAT".
+	until	 = "UNTIL".
+	procedure= "PROCEDURE".
+	begin	 = "BEGIN".
+	return	 = "RETURN".
+	module	 = "MODULE".
+	const	 = "CONST".
+	asg	 = ":=".
+	eq	 = "=".
+	ne	 = "#".
+	gt	 = ">".
+	lt	 = "<".
+	ge	 = ">=".
+	le	 = "<=".
+	plus	 = "+".
+	mins	 = "-".
+	mul	 = "*".
+	ti	 = "~".
 
 COMMENTS FROM "{" TO "}" NESTED
 COMMENTS FROM "(*" TO "*)" NESTED
@@ -19,55 +61,164 @@ COMMENTS FROM "(*" TO "*)" NESTED
 IGNORE cr + lf + tab
 
 PRODUCTIONS
-	
-	Identificator = ident.
+/*---------------------------------------------------------------------------------*/	
+	Identificator<wchar_t* &name> = ident 	(. coco_string_create(t->val); .).
 	Integer = int.
 	Set = set.
-
+/*---------------------------------------------------------------------------------*/	
 	Constant = Integer | Set.
+/*---------------------------------------------------------------------------------*/	
+	Type<int &type> 
+	= 
+	Tint 					(. type = tInt; .)
+	| Tset 					(. type = tSet; .)
+	| Tbool					(. type = tBool; .).
+/*---------------------------------------------------------------------------------*/	
+	VariableDeclaration 			(. wchar_t* name; int type; .)
+	= 
+	Type<type>
+	Identificator<name>	 		(.  .)
+	{"," Identificator<name>		(.  .)
+	}.
 
-	Type = "INT" | "SET" | "BOOL".
-
-	VariableDeclaration = Type Identificator {"," Identificator}.
-
-	Operator = "+" | "-" | "*".
-
-	Expression1Const = (Constant) [Operator (Identificator | Constant)].
-	Expression = Expression1Const | Identificator ([Operator (Identificator | Constant)] | Call).
-
-	Relation = "=" | "#" | "<" | ">" | "<=" | ">=".
+/*---------------------------------------------------------------------------------*/	
+	Operator<int &op>
+	= 
+	plus 					(. op = oPlus; .)
+	| mins 					(. op = oMinus; .)
+	| mul					(. op = oMul; .).
+/*---------------------------------------------------------------------------------*/	
+	Expression1Const<int &type> 		(. int op; wchar_t* name; .)
+	=
+	Constant
+	[Operator<op> 
+	(Identificator<name> 			(.  .)
+	| Constant)].
+/*---------------------------------------------------------------------------------*/	
+	Expression<int &type> 			(. int op; wchar_t* name; .)
+	= 
+	Expression1Const<type> 
+	| Identificator<name> 
+	([Operator<op> 
+	(Identificator<name>
+	| Constant)] 
+	| Call<type>
+	).
+/*---------------------------------------------------------------------------------*/	
+	Relation = eq | ne | lt | gt | le | ge.
+/*---------------------------------------------------------------------------------*/	
 	Index = Integer.
-	Term = Identificator Relation (Identificator | Constant) | ["~"] Identificator ["." Index].
-
+/*---------------------------------------------------------------------------------*/	
+	Term 					(. wchar_t* name; .)
+	= 
+	Identificator<name> 
+	Relation 
+	(Identificator<name>
+	| Constant) 
+	| [ti] 
+	Identificator<name>
+	["." Index
+	].
+/*---------------------------------------------------------------------------------*/	
 	Conjunction = Term {"&" Term}.
+/*---------------------------------------------------------------------------------*/	
 	Disjunction = Term {"OR" Term}.
-	
-	Condition = Conjunction | Disjunction | "*".
-
-	Assignment = ":=" Expression.
-	Call = "(" [Expression] ")".
-	Command = "!" ["~"] Identificator ["." Index] | ("INC" | "DEC" | "ROL" | "ROR") Identificator.
-	Query = "?" ["~"] Identificator ["." Index].
-
-	IfStat = "IF" Condition "THEN" StatSeq {"ELSIF" Condition "THEN" StatSeq} ["ELSE" StatSeq] "END".
-
-	WhileStat = "WHILE" Condition "DO" StatSeq {"ELSIF" Condition "DO" StatSeq} "END".
-
-	RepeatStat = "REPEAT" StatSeq ("UNTIL" Condition | "END").
-
-	Statement = [Identificator (Assignment | Call) | Command | Query | IfStat | WhileStat | RepeatStat].
+/*---------------------------------------------------------------------------------*/	
+	Condition = Conjunction | Disjunction.
+/*---------------------------------------------------------------------------------*/	
+	Assignment<int &type> 
+	= 
+	asg Expression<type>
+	.
+/*---------------------------------------------------------------------------------*/	
+	Call<int &type> 
+	= 
+	"(" [Expression<type>
+	] ")".
+/*---------------------------------------------------------------------------------*/	
+	Command 				(. wchar_t* name; .)
+	= 
+	"!" [ti
+	] Identificator<name>
+	["." Index] | 
+	(inc 
+	| dec 
+	| rol 
+	| ror
+	) Identificator<name>
+	.
+/*---------------------------------------------------------------------------------*/	
+	Query 					(. wchar_t* name; .)
+	= 
+	"?" [ti
+	] Identificator<name>
+	["." Index].
+/*---------------------------------------------------------------------------------*/	
+	IfStat = if Condition then StatSeq {elsif Condition then StatSeq} [else StatSeq] end.
+/*---------------------------------------------------------------------------------*/	
+	WhileStat = while Condition do StatSeq {elsif Condition do StatSeq} end.
+/*---------------------------------------------------------------------------------*/	
+	RepeatStat = repeat StatSeq (until Condition | end).
+/*---------------------------------------------------------------------------------*/	
+	Statement 				(. int type; wchar_t* name; .)
+	=
+	[Identificator<name>
+	(Assignment<type>
+	| Call<type>
+	) | Command
+	| Query
+	| IfStat
+	| WhileStat
+	| RepeatStat
+	].
+/*---------------------------------------------------------------------------------*/	
 	StatSeq = Statement {";" Statement}.
-
-
-	FormalParameter = Type Identificator.
-	ProcedureHeading = "PROCEDURE" Identificator ["(" FormalParameter ")"] [":" Type].
-	ProcedureBody = [{VariableDeclaration} ";"] ["BEGIN" StatSeq] ["RETURN" Expression] "END" Identificator.
-	
+/*---------------------------------------------------------------------------------*/	
+	FormalParameter 			(. int type; wchar_t* name; .)
+	= 
+	Type<type>
+	Identificator<name>
+	.
+/*---------------------------------------------------------------------------------*/	
+	ProcedureHeading 			(. int type; wchar_t* name; .)
+	= 
+	procedure
+	Identificator<name>
+	["(" FormalParameter
+	")"]
+	[":"
+	Type<type>
+	].
+/*---------------------------------------------------------------------------------*/	
+	ProcedureBody 				(. int type; wchar_t* name; .)
+	= 
+	[{VariableDeclaration
+	} ";"]
+	[begin
+	StatSeq
+	]
+	[return Expression<type>
+	] end Identificator<name>
+	.
+/*---------------------------------------------------------------------------------*/	
 	ProcedureDeclaration = ProcedureHeading ";" ProcedureBody.
-
-	Module = "MODULE" Identificator ";" ["CONST" {Identificator "=" Constant ";"}] [Type {Identificator ["," Identificator] ";"}] {ProcedureDeclaration ";"} ["BEGIN" StatSeq] "END" Identificator ".".
-
-	MainBody = "BEGIN" StatSeq "END.".
-
-	picl = "PROGRAM" Identificator ";" {Module} {ProcedureDeclaration} {VariableDeclaration} MainBody | StatSeq.
+/*---------------------------------------------------------------------------------*/	
+	Module 					(. int type; wchar_t* name; .)
+	= 
+	module Identificator<name>
+	";"
+	[const {Identificator<name>
+	"=" Constant ";"}]
+	[Type<type>
+	{Identificator<name>
+	["," Identificator<name>
+	] ";"}]
+	{ProcedureDeclaration ";"} [begin StatSeq]
+	end Identificator<name>
+	".".
+/*---------------------------------------------------------------------------------*/	
+	MainBody = begin StatSeq end ".".
+/*---------------------------------------------------------------------------------*/	
+	picl = Module | "PROGRAM" {ProcedureDeclaration} {VariableDeclaration} MainBody.
+/*---------------------------------------------------------------------------------*/	
 END picl.
