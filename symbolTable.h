@@ -2,7 +2,10 @@
 #ifndef _SYMBOLTABLE_H_
 #define _SYMBOLTABLE_H_
 
-#include "Parser.h"
+#include "Scanner.h"
+
+class Parser;
+class Errors;
 
 class Object {
 private:
