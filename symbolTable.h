@@ -4,6 +4,13 @@
 
 #include "Scanner.h"
 
+#define KIND_VAR 0
+#define KIND_PROC 1
+#define KIND_SCOPE 2
+#define TYPE_BOOL 0
+#define TYPE_INT 1
+#define TYPE_SET 2
+
 class Parser;
 class Errors;
 
@@ -26,13 +33,14 @@ class SymbolTable {
 	int currentLevel;
 	Object* topScope;
 	Errors* e;
+	Parser* p;
 public:
 	SymbolTable(Parser* parser);
-	void putError(wchar_t* errMsg);
+	void putError(int line, int col, wchar_t* errMsg);
 	void openScope();
 	void closeScope();
-	Object* newObj(wchar_t* name, int kind, int type);
-	Object* findObj(wchar_t* name);
+	Object* newObj(int l, int c, wchar_t* name, int kind, int type);
+	Object* findObj(int l, int c, wchar_t* name);
 };
 
 #endif

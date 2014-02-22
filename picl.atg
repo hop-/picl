@@ -11,6 +11,7 @@ COMPILER picl
 	
 	int // object kinds
 		var, proc;
+	SymbolTable* tab;
 	
 	void putError(wchar_t* errMsg){
 		errors->Error(la->line, la->col, errMsg);
@@ -79,7 +80,7 @@ IGNORE cr + lf + tab
 
 PRODUCTIONS
 /*------------------------------------------------------*/	
-	Identificator<wchar_t* &name> = ident 	(. coco_string_create(t->val); .).
+	Identificator<wchar_t* &name> = ident 	(. name = coco_string_create(t->val); .).
 	Integer = int.
 	Set = set.
 /*------------------------------------------------------*/	
@@ -94,8 +95,8 @@ PRODUCTIONS
 	VariableDeclaration 			(. wchar_t* name; int type; .)
 	= 
 	Type<type>
-	Identificator<name>	 		(.  .)
-	{"," Identificator<name>		(.  .)
+	Identificator<name>	 		(. tab->newObj(t->line, t->col, name, var, type); .)
+	{"," Identificator<name>		(. tab->newObj(t->line, t->col, name, var, type); .)
 	}.
 
 /*------------------------------------------------------*/	
@@ -109,7 +110,7 @@ PRODUCTIONS
 	=
 	Constant
 	[Operator<op> 
-	(Identificator<name> 			(.  .)
+	(Identificator<name> 			(. tab->findObj(t->line, t->col, name); .)
 	| Constant)].
 /*------------------------------------------------------*/	
 	Expression<int &type> 			(. int op; wchar_t* name; .)
@@ -234,8 +235,20 @@ PRODUCTIONS
 	end Identificator<name>
 	".".
 /*------------------------------------------------------*/	
-	MainBody = begin StatSeq end ".".
+	MainBody 
+	=
+	begin
+	StatSeq
+	end "."
+	.
 /*------------------------------------------------------*/	
-	picl = Module | "PROGRAM" {ProcedureDeclaration} {VariableDeclaration} MainBody.
+	picl 					(. initVars(); .)
+	= 
+	Module 
+	| "PROGRAM" 				(. tab->openScope(); .)
+	{ProcedureDeclaration} 
+	{VariableDeclaration}
+	MainBody				(. tab->closeScope(); .)
+	.
 /*------------------------------------------------------*/	
 END picl.
