@@ -7,8 +7,7 @@
 class Parser;
 class Errors;
 
-class Object {
-private:
+struct Object {
 	wchar_t* name;
 	int type;
 	Object* next;
@@ -17,17 +16,14 @@ private:
 	int level;
 	Object* locals;
 	int nextAddr;
-public:
 	Object();
 	~Object();
 };
 
 class SymbolTable {
-private:
-	const int integer,boolean, set;
+	const int tInt,tBool, tSet;
 	const int var, proc, scope;
 	int currentLevel;
-	Object* undefObj;
 	Object* topScope;
 	Errors* e;
 public:
