@@ -12,7 +12,14 @@ Object::~Object(){
 
 SymbolTable::SymbolTable(Parser* parser): 
 		tInt(1), tBool(0), tSet(2), var(0), proc(1), scope(2),
-		topScope(NULL), e(parser->errors), currentLevel(-1) {}
+		topScope(NULL), e(parser->errors), currentLevel(-1), undefObj(new Object()) {
+	undefObj->name = coco_string_create("undef");
+	undefObj->type = TYPE_UNDEF;
+	undefObj->kind = var;
+	undefObj->addr = 0;
+	undefObj->level = 0;
+	undefObj->next = NULL;
+}
 
 void SymbolTable::putError(int line, int col, wchar_t* errMsg){
 	e->Error(line, col, errMsg);
@@ -77,5 +84,5 @@ Object* SymbolTable::findObj(int l, int c, wchar_t* name){
 	wchar_t str[272];
 	coco_swprintf(str, 272, L"%ls is undeclared", name);
 	putError(l, c, str);
-	return NULL;
+	return undefObj;
 }

@@ -10,6 +10,7 @@
 #define TYPE_BOOL 0
 #define TYPE_INT 1
 #define TYPE_SET 2
+#define TYPE_UNDEF 3
 
 class Parser;
 class Errors;
@@ -31,9 +32,9 @@ class SymbolTable {
 	const int tInt,tBool, tSet;
 	const int var, proc, scope;
 	int currentLevel;
+	Object* undefObj;
 	Object* topScope;
 	Errors* e;
-	Parser* p;
 public:
 	SymbolTable(Parser* parser);
 	void putError(int line, int col, wchar_t* errMsg);

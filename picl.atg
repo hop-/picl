@@ -12,6 +12,11 @@ COMPILER picl
 	int // object kinds
 		var, proc;
 	SymbolTable* tab;
+
+	struct Const{
+		int type;
+		wchar_t* val;
+	};
 	
 	void putError(wchar_t* errMsg){
 		errors->Error(la->line, la->col, errMsg);
@@ -84,7 +89,13 @@ PRODUCTIONS
 	Integer = int.
 	Set = set.
 /*------------------------------------------------------*/	
-	Constant = Integer | Set.
+	Constant<Const* c>
+	=
+	Integer					(. c->val = t->val;
+						   c->type = tInt; .)
+	| Set					(. c->val = t->val;
+						   c->type = tSet; .)
+	.
 /*------------------------------------------------------*/	
 	Type<int &type> 
 	= 
@@ -106,34 +117,54 @@ PRODUCTIONS
 	| mins 					(. op = oMinus; .)
 	| mul					(. op = oMul; .).
 /*------------------------------------------------------*/	
-	Expression1Const<int &type> 		(. int op; wchar_t* name; .)
+	Expression1Const<int &type> 		(. Const* c; int op; wchar_t* name; Object* obj;
+						   wchar_t emsg[40];
+						   coco_swprintf(emsg, 40, L"incompatibility of types");.)
 	=
-	Constant
+	Constant<c>				(. type = c->type; .)
 	[Operator<op> 
-	(Identificator<name> 			(. tab->findObj(t->line, t->col, name); .)
-	| Constant)].
+	(Identificator<name> 			(. obj = tab->findObj(t->line, t->col, name);
+						   if(type != obj->type)
+						   	putError(emsg); .)
+	| Constant<c>				(. if(type != c->type)
+	                                                putError(emsg); .)
+	)].
 /*------------------------------------------------------*/	
-	Expression<int &type> 			(. int op; wchar_t* name; .)
+	Expression<int &type> 			(. Const* c; int op, type2; wchar_t* name; Object* obj;
+						   wchar_t emsg[40];
+						   coco_swprintf(emsg, 40, L"incompatibility of types");.)
 	= 
 	Expression1Const<type> 
-	| Identificator<name> 
+	| Identificator<name>			(. obj = tab->findObj(t->line, t->col, name);
+						   type = obj->type; .) 
 	([Operator<op> 
-	(Identificator<name>
-	| Constant)] 
-	| Call<type>
+	(Identificator<name>			(. obj = tab->findObj(t->line, t->col, name);
+						   if(type != obj->type)
+							putError(emsg); .)
+	| Constant<c>				(. if(type != c->type)
+							putError(emsg); .)
+	)] | Call<type>				
 	).
 /*------------------------------------------------------*/	
-	Relation = eq | ne | lt | gt | le | ge.
+	Relation 
+	= 
+	eq
+	| ne
+	| lt
+	| gt
+	| le
+	| ge
+	.
 /*------------------------------------------------------*/	
 	Index = Integer.
 /*------------------------------------------------------*/	
-	Term 					(. wchar_t* name; .)
+	Term 					(. Const* c; wchar_t* name; .)
 	= 
 	Identificator<name> 
 	Relation 
 	(Identificator<name>
-	| Constant) 
-	| [ti] 
+	| Constant<c>
+	) | [ti] 
 	Identificator<name>
 	["." Index
 	].
@@ -221,13 +252,13 @@ PRODUCTIONS
 /*------------------------------------------------------*/	
 	ProcedureDeclaration = ProcedureHeading ";" ProcedureBody.
 /*------------------------------------------------------*/	
-	Module 					(. int type; wchar_t* name; .)
+	Module 					(. Const* c; int type; wchar_t* name; .)
 	= 
 	module Identificator<name>
 	";"
 	[const {Identificator<name>
-	"=" Constant ";"}]
-	[Type<type>
+	"=" Constant<c>
+	";"}] [Type<type>
 	{Identificator<name>
 	["," Identificator<name>
 	] ";"}]
