@@ -2,6 +2,8 @@
 CXX ?= g++
 COCO ?= ./Coco
 
+opts ?=
+
 
 atgName = picl.atg
 
@@ -18,14 +20,19 @@ objs = 	Scanner.o\
 
 default: $(exe)
 
+debug: setDebug $(exe)
+
 $(cocoOut): $(atgName)
 	$(COCO) $(atgName) 
 
 $(exe): $(cocoOut) $(objs) main.o
-	$(CXX) $(objs) main.o -o $@
+	$(CXX) $(opts) $(objs) main.o -o $@
 
 %.o: %.cpp
-	$(CXX) -c $< -o $@
+	$(CXX) $(opts) -c $< -o $@
+
+setDebug:
+	$(eval opts += -g)
 
 clean:
 	rm -rf *.o
