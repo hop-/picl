@@ -89,7 +89,7 @@ PRODUCTIONS
 	Integer = int.
 	Set = set.
 /*------------------------------------------------------*/	
-	Constant<Const*& c>			(. c = new Const(); .)
+	Constant<Const*& c>
 	=
 	Integer					(. c->val = t->val;
 						   c->type = tInt; .)
