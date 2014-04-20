@@ -7,7 +7,7 @@ COMPILER picl
 		oPlus, oMinus, oMul;
 	
 	int // types
-		tInt, tSet, tBool;
+		tInt, tSet, tBool, tUndef;
 	
 	int // object kinds
 		var, proc;
@@ -29,12 +29,13 @@ COMPILER picl
 		tBool = 0;
 		tInt = 1;
 		tSet = 2;
+		tUndef = 3;
 		var = 0;
 		proc = 1;
 	}
 
 CHARACTERS
-  	letter 	 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".
+  	letter 	 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_".
   	digit 	 = "0123456789".
 	hexDigit = "0123456789ABCDEF".
 	cr	 = '\r'.
@@ -89,7 +90,7 @@ PRODUCTIONS
 	Integer = int.
 	Set = set.
 /*------------------------------------------------------*/	
-	Constant<Const*& c>
+	Constant<Const*& c>			(. c = new Const(); .)
 	=
 	Integer					(. c->val = t->val;
 						   c->type = tInt; .)
@@ -143,7 +144,7 @@ PRODUCTIONS
 							putError(emsg); .)
 	| Constant<c>				(. if(type != c->type)
 							putError(emsg); .)
-	)] | Call<type>				
+	)] | Call<type>				(.  .)
 	).
 /*------------------------------------------------------*/	
 	Relation 
@@ -223,34 +224,51 @@ PRODUCTIONS
 /*------------------------------------------------------*/	
 	StatSeq = Statement {";" Statement}.
 /*------------------------------------------------------*/	
-	FormalParameter 			(. int type; wchar_t* name; .)
+	FormalParameter<int& type> 		(. wchar_t* name; .)
 	= 
 	Type<type>
-	Identificator<name>
+	Identificator<name>			(. tab->newObj(t->line, t->col, name, var, type); .)
 	.
 /*------------------------------------------------------*/	
-	ProcedureHeading 			(. int type; wchar_t* name; .)
+	ProcedureHeading<Object*& obj>			(. wchar_t* name;
+							int inType, returnType; .)
 	= 
 	procedure
-	Identificator<name>
-	["(" FormalParameter
+	Identificator<name>			(. returnType = tUndef; .)
+	["(" FormalParameter<inType>
 	")"]
 	[":"
-	Type<type>
+	Type<returnType>			(. tab->newObj(t->line, t->col, name, proc, returnType);
+							obj = tab->findObj(t->line, t->col, name); .)
 	].
 /*------------------------------------------------------*/	
-	ProcedureBody 				(. int type; wchar_t* name; .)
+	ProcedureBody<Object* proc>			(. wchar_t* endName; 
+							int returnType = tUndef;
+							wchar_t emsg[40]; .)
 	= 
 	[{VariableDeclaration
-	} ";"]
+	";"}]
 	[begin
 	StatSeq
-	]
-	[return Expression<type>
-	] end Identificator<name>
+	][return Expression<returnType>		(. if(proc->type != returnType){
+						   	coco_swprintf(emsg, 40, L"Incorrect return type");
+							putError(emsg);
+						} .)
+	] end Identificator<endName>		(. if(proc->type != returnType && returnType == tUndef){
+							coco_swprintf(emsg, 40, L"Nothing was returned");
+							putError(emsg);
+						}else if(wcscmp(endName,proc->name)){
+							coco_swprintf(emsg, 40, L"Bad indetificator in end of procedure");
+							putError(emsg);
+						} .)
 	.
 /*------------------------------------------------------*/	
-	ProcedureDeclaration = ProcedureHeading ";" ProcedureBody.
+	ProcedureDeclaration			(. Object* procObj; .)
+	=
+	ProcedureHeading<procObj>
+	";"					(. tab->openScope(); .)
+	ProcedureBody<procObj>		(. tab->closeScope(); .)
+	.
 /*------------------------------------------------------*/	
 	Module 					(. Const* c; int type; wchar_t* name; .)
 	= 
@@ -278,7 +296,7 @@ PRODUCTIONS
 	Module 
 	| "PROGRAM" 				(. tab->openScope(); .)
 	{ProcedureDeclaration} 
-	{VariableDeclaration}
+	{VariableDeclaration ";"}
 	MainBody				(. tab->closeScope(); .)
 	.
 /*------------------------------------------------------*/	

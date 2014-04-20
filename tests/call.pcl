@@ -1,4 +1,27 @@
-call()
-call(das)
-call(as + asd)
-call(da(ss))
+PROGRAM
+PROCEDURE foo_1(INT odd_a):INT;
+	INT odd_b;
+BEGIN
+	odd_b := 3;
+	RETURN odd_a + odd_b
+END foo_1
+PROCEDURE foo_2;
+BEGIN
+	{do nothing}
+END foo_2
+PROCEDURE foo_3:INT;
+	INT i_a, i_b;
+	BOOL i_bool;
+BEGIN
+	i_a := i_a + i_b;
+	RETURN i_bool
+END foo_3
+	INT a, b;
+BEGIN
+	a := 1;
+	b := 5;
+	foo_1(a);
+	foo_2();
+	foo_3();
+	bad_call(b);
+END.
