@@ -40,8 +40,8 @@ public:
 	void putError(int line, int col, wchar_t* errMsg);
 	void openScope();
 	void closeScope();
-	Object* newObj(int l, int c, wchar_t* name, int kind, int type);
-	Object* findObj(int l, int c, wchar_t* name);
+	Object* add(int l, int c, wchar_t* name, int kind, int type);
+	Object* find(int l, int c, wchar_t* name);
 };
 
 #endif

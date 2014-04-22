@@ -107,8 +107,8 @@ PRODUCTIONS
 	VariableDeclaration 			(. wchar_t* name; int type; .)
 	= 
 	Type<type>
-	Identificator<name>	 		(. tab->newObj(t->line, t->col, name, var, type); .)
-	{"," Identificator<name>		(. tab->newObj(t->line, t->col, name, var, type); .)
+	Identificator<name>	 		(. tab->add(t->line, t->col, name, var, type); .)
+	{"," Identificator<name>		(. tab->add(t->line, t->col, name, var, type); .)
 	}.
 
 /*------------------------------------------------------*/	
@@ -124,7 +124,7 @@ PRODUCTIONS
 	=
 	Constant<c>				(. type = c->type; .)
 	[Operator<op> 
-	(Identificator<name> 			(. obj = tab->findObj(t->line, t->col, name);
+	(Identificator<name> 			(. obj = tab->find(t->line, t->col, name);
 						   if(type != obj->type)
 						   	putError(emsg); .)
 	| Constant<c>				(. if(type != c->type)
@@ -136,10 +136,10 @@ PRODUCTIONS
 						   coco_swprintf(emsg, 40, L"incompatibility of types");.)
 	= 
 	Expression1Const<type> 
-	| Identificator<name>			(. obj = tab->findObj(t->line, t->col, name);
+	| Identificator<name>			(. obj = tab->find(t->line, t->col, name);
 						   type = obj->type; .) 
 	([Operator<op> 
-	(Identificator<name>			(. obj = tab->findObj(t->line, t->col, name);
+	(Identificator<name>			(. obj = tab->find(t->line, t->col, name);
 						   if(type != obj->type)
 							putError(emsg); .)
 	| Constant<c>				(. if(type != c->type)
@@ -186,7 +186,7 @@ PRODUCTIONS
 	"(" [Expression<type>
 	] ")".
 /*------------------------------------------------------*/	
-	Command 				(. wchar_t* name; .)
+	Command 			(. wchar_t* name; .)
 	= 
 	"!" [ti
 	] Identificator<name>
@@ -198,7 +198,7 @@ PRODUCTIONS
 	) Identificator<name>
 	.
 /*------------------------------------------------------*/	
-	Query 					(. wchar_t* name; .)
+	Query 				(. wchar_t* name; .)
 	= 
 	"?" [ti
 	] Identificator<name>
@@ -210,12 +210,18 @@ PRODUCTIONS
 /*------------------------------------------------------*/	
 	RepeatStat = repeat StatSeq (until Condition | end).
 /*------------------------------------------------------*/	
-	Statement 				(. int type; wchar_t* name; .)
+	Statement 			(. int type;
+					wchar_t* name;
+					wchar_t emsg[40];
+					Object* obj;.)
 	=
-	[Identificator<name>
+	[Identificator<name>		(. obj = tab->find(t->line, t->col, name); .)
 	(Assignment<type>
-	| Call<type>
-	) | Command
+	| Call<type>			(. if(obj->kind != proc){
+						coco_swprintf(emsg, 40, L"Can't assign to procedure");
+						putError(emsg);
+					} .)
+	)| Command
 	| Query
 	| IfStat
 	| WhileStat
@@ -224,53 +230,53 @@ PRODUCTIONS
 /*------------------------------------------------------*/	
 	StatSeq = Statement {";" Statement}.
 /*------------------------------------------------------*/	
-	FormalParameter<int& type> 		(. wchar_t* name; .)
+	FormalParameter<int& type> 	(. wchar_t* name; .)
 	= 
 	Type<type>
-	Identificator<name>			(. tab->newObj(t->line, t->col, name, var, type); .)
+	Identificator<name>		(. tab->add(t->line, t->col, name, var, type); .)
 	.
 /*------------------------------------------------------*/	
-	ProcedureHeading<Object*& obj>			(. wchar_t* name;
-							int inType, returnType; .)
+	ProcedureHeading<Object*& obj>	(. wchar_t* name;
+					int inType, returnType; .)
 	= 
 	procedure
-	Identificator<name>			(. returnType = tUndef; .)
+	Identificator<name>		(. returnType = tUndef; .)
 	["(" FormalParameter<inType>
 	")"]
 	[":"
-	Type<returnType>			(. tab->newObj(t->line, t->col, name, proc, returnType);
-							obj = tab->findObj(t->line, t->col, name); .)
-	].
+	Type<returnType>]		(. tab->add(t->line, t->col, name, proc, returnType);
+					obj = tab->find(t->line, t->col, name); .)
+	.
 /*------------------------------------------------------*/	
-	ProcedureBody<Object* proc>			(. wchar_t* endName; 
-							int returnType = tUndef;
-							wchar_t emsg[40]; .)
+	ProcedureBody<Object* proc>	(. wchar_t* endName; 
+					int returnType = tUndef;
+					wchar_t emsg[40]; .)
 	= 
 	[{VariableDeclaration
 	";"}]
 	[begin
 	StatSeq
-	][return Expression<returnType>		(. if(proc->type != returnType){
-						   	coco_swprintf(emsg, 40, L"Incorrect return type");
-							putError(emsg);
-						} .)
-	] end Identificator<endName>		(. if(proc->type != returnType && returnType == tUndef){
-							coco_swprintf(emsg, 40, L"Nothing was returned");
-							putError(emsg);
-						}else if(wcscmp(endName,proc->name)){
-							coco_swprintf(emsg, 40, L"Bad indetificator in end of procedure");
-							putError(emsg);
-						} .)
+	][return Expression<returnType>	(. if(proc->type != returnType){
+					coco_swprintf(emsg, 40, L"Incorrect return type");
+					putError(emsg);
+					} .)
+	] end Identificator<endName>	(. if(proc->type != returnType && returnType == tUndef){
+						coco_swprintf(emsg, 40, L"Nothing was returned");
+						putError(emsg);
+					}else if(wcscmp(endName,proc->name)){
+						coco_swprintf(emsg, 40, L"Bad indetificator in end of procedure");
+						putError(emsg);
+					} .)
 	.
 /*------------------------------------------------------*/	
-	ProcedureDeclaration			(. Object* procObj; .)
+	ProcedureDeclaration		(. Object* procObj; .)
 	=
 	ProcedureHeading<procObj>
-	";"					(. tab->openScope(); .)
+	";"				(. tab->openScope(); .)
 	ProcedureBody<procObj>		(. tab->closeScope(); .)
 	.
 /*------------------------------------------------------*/	
-	Module 					(. Const* c; int type; wchar_t* name; .)
+	Module 				(. Const* c; int type; wchar_t* name; .)
 	= 
 	module Identificator<name>
 	";"
@@ -291,13 +297,13 @@ PRODUCTIONS
 	end "."
 	.
 /*------------------------------------------------------*/	
-	picl 					(. initVars(); .)
+	picl 				(. initVars(); .)
 	= 
 	Module 
-	| "PROGRAM" 				(. tab->openScope(); .)
+	| "PROGRAM" 			(. tab->openScope(); .)
 	{ProcedureDeclaration} 
 	{VariableDeclaration ";"}
-	MainBody				(. tab->closeScope(); .)
+	MainBody			(. tab->closeScope(); .)
 	.
 /*------------------------------------------------------*/	
 END picl.

@@ -6,8 +6,10 @@ BEGIN
 	RETURN odd_a + odd_b
 END foo_1
 PROCEDURE foo_2;
+	INT a;
 BEGIN
 	{do nothing}
+	a := 1;
 END foo_2
 PROCEDURE foo_3:INT;
 	INT i_a, i_b;

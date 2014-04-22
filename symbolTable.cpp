@@ -41,7 +41,7 @@ void SymbolTable::closeScope(){
 	currentLevel--;
 }
 
-Object* SymbolTable::newObj(int l, int c, wchar_t* name, int kind, int type){
+Object* SymbolTable::add(int l, int c, wchar_t* name, int kind, int type){
 	Object* obj = new Object();
 	Object* p = topScope->locals;
 	Object* last = NULL;
@@ -69,7 +69,7 @@ Object* SymbolTable::newObj(int l, int c, wchar_t* name, int kind, int type){
 	return obj;
 }
 
-Object* SymbolTable::findObj(int l, int c, wchar_t* name){
+Object* SymbolTable::find(int l, int c, wchar_t* name){
 	Object* obj;
 	Object* scope = topScope;
 	while(scope != NULL){
