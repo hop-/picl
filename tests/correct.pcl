@@ -1,0 +1,10 @@
+PROGRAM				{testing correct form of language}
+INT a, b, c, d, e, f;		{integer variables}
+BEGIN				{begining program body}
+	a := 2;			{assignment}
+	b := 4;
+	c := a + b;
+	d := a * b;
+	e := a + 1;
+	f := 1 + a;
+END.				{end of program}

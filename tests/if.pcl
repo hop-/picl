@@ -1,0 +1,21 @@
+PROGRAM
+INT a, b, c;
+BEGIN
+	a := 2;
+	b := 3;
+	IF a < b 
+	THEN
+		c := a;
+	ELSE
+		c := b;
+	END;
+	IF a = b
+	THEN
+		c := a;
+	ELSIF a = c
+	THEN
+		b := a;
+	ELSE
+		a := b;
+	END;
+END.

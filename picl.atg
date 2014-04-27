@@ -9,6 +9,9 @@ COMPILER picl
 	int // types
 		tInt, tSet, tBool, tUndef;
 	
+	int // relations
+		rEq, rNe, rLt, rLe, rGt, rGe;
+	
 	int // object kinds
 		var, proc;
 	SymbolTable* tab;
@@ -32,6 +35,12 @@ COMPILER picl
 		tUndef = 3;
 		var = 0;
 		proc = 1;
+		rEq = 0;
+		rNe = 1;
+		rLt = 2;
+		rLe = 3;
+		rGt = 4;
+		rGe = 5;
 	}
 
 CHARACTERS
@@ -140,41 +149,61 @@ PRODUCTIONS
 						   type = obj->type; .) 
 	([Operator<op> 
 	(Identificator<name>			(. obj = tab->find(t->line, t->col, name);
-						   if(type != obj->type)
-							putError(emsg); .)
-	| Constant<c>				(. if(type != c->type)
-							putError(emsg); .)
-	)] | Call<type>				(.  .)
+						   if(type != obj->type){
+							putError(emsg);
+						} .)
+	| Constant<c>				(. if(type != c->type){
+							putError(emsg);
+						} .)
+	)] | Call<type2>			(. if(type != type2){
+							putError(emsg);
+						} .)
 	).
 /*------------------------------------------------------*/	
-	Relation 
-	= 
-	eq
-	| ne
-	| lt
-	| gt
-	| le
-	| ge
+	Relation<int& rel> 
+	=	 
+	eq					(. rel = rEq; .)
+	| ne					(. rel = rNe; .)
+	| lt					(. rel = rLt; .)
+	| gt					(. rel = rGt; .)
+	| le					(. rel = rLe; .)
+	| ge					(. rel = rGe; .)
 	.
 /*------------------------------------------------------*/	
 	Index = Integer.
 /*------------------------------------------------------*/	
-	Term 					(. Const* c; wchar_t* name; .)
+	Term 					(. Const* c;
+						int relation = -1;
+						wchar_t* name1;
+						wchar_t* name2; .)
 	= 
-	Identificator<name> 
-	Relation 
-	(Identificator<name>
+	Identificator<name1>			(. tab->find(t->line, t->col, name1); .) 
+	Relation<relation>
+	(Identificator<name2>			(. tab->find(t->line, t->col, name2); .)
 	| Constant<c>
-	) | [ti] 
-	Identificator<name>
-	["." Index
+	) | [ti					(. relation = 0; .)
+	] Identificator<name1>			(. tab->find(t->line, t->col, name1); .)
+	["." Index				(.  .)
 	].
 /*------------------------------------------------------*/	
-	Conjunction = Term {"&" Term}.
+	Conjunction
+	=
+	Term
+	{"AND" Term
+	}.
 /*------------------------------------------------------*/	
-	Disjunction = Term {"OR" Term}.
+	Disjunction
+	=
+	Term
+	{"OR"
+	Term
+	}.
 /*------------------------------------------------------*/	
-	Condition = Conjunction | Disjunction.
+	Condition
+	=
+	Conjunction
+	| Disjunction
+	.
 /*------------------------------------------------------*/	
 	Assignment<int &type> 
 	= 
@@ -204,16 +233,47 @@ PRODUCTIONS
 	] Identificator<name>
 	["." Index].
 /*------------------------------------------------------*/	
-	IfStat = if Condition then StatSeq {elsif Condition then StatSeq} [else StatSeq] end.
+	IfStat
+	=
+	if
+	Condition
+	then
+	StatSeq
+	{elsif
+	Condition
+	then
+	StatSeq
+	} [else
+	StatSeq
+	] end
+	.
 /*------------------------------------------------------*/	
-	WhileStat = while Condition do StatSeq {elsif Condition do StatSeq} end.
+	WhileStat
+	=
+	while
+	Condition
+	do
+	StatSeq
+	{elsif
+	Condition
+	do
+	StatSeq
+	} end
+	.
 /*------------------------------------------------------*/	
-	RepeatStat = repeat StatSeq (until Condition | end).
+	RepeatStat
+	=
+	repeat
+	StatSeq
+	(until
+	Condition
+	| end
+	).
 /*------------------------------------------------------*/	
 	Statement 			(. int type;
 					wchar_t* name;
 					wchar_t emsg[40];
-					Object* obj;.)
+					Object* obj; .)
 	=
 	[Identificator<name>		(. obj = tab->find(t->line, t->col, name); .)
 	(Assignment<type>
