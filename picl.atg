@@ -125,7 +125,8 @@ PRODUCTIONS
 	= 
 	plus 					(. op = oPlus; .)
 	| mins 					(. op = oMinus; .)
-	| mul					(. op = oMul; .).
+	| mul					(. op = oMul; .)
+	.
 /*------------------------------------------------------*/	
 	Expression1Const<int &type> 		(. Const* c; int op; wchar_t* name; Object* obj;
 						   wchar_t emsg[40];
@@ -155,9 +156,7 @@ PRODUCTIONS
 	| Constant<c>				(. if(type != c->type){
 							putError(emsg);
 						} .)
-	)] | Call<type2>			(. if(type != type2){
-							putError(emsg);
-						} .)
+	)] | Call<type2>			(.  .)
 	).
 /*------------------------------------------------------*/	
 	Relation<int& rel> 
@@ -173,15 +172,24 @@ PRODUCTIONS
 	Index = Integer.
 /*------------------------------------------------------*/	
 	Term 					(. Const* c;
+						Object* obj;
 						int relation = -1;
+						int type, type2;
 						wchar_t* name1;
 						wchar_t* name2; .)
 	= 
-	Identificator<name1>			(. tab->find(t->line, t->col, name1); .) 
+	Identificator<name1>			(. obj = tab->find(t->line, t->col, name1);
+						type = obj->type; .) 
 	Relation<relation>
-	(Identificator<name2>			(. tab->find(t->line, t->col, name2); .)
-	| Constant<c>
-	) | [ti					(. relation = 0; .)
+	(Identificator<name2>			(. obj = tab->find(t->line, t->col, name2);
+						type2 = obj->type; .)
+	| Constant<c>				(. type2 = c->type; .)
+	)					(. if(type != type2){
+							wchar_t emsg[40];
+						   	coco_swprintf(emsg, 40, L"incompatibility of types");
+							putError(emsg);
+						} .)
+	| [ti					(. relation = 0; .)
 	] Identificator<name1>			(. tab->find(t->line, t->col, name1); .)
 	["." Index				(.  .)
 	].
